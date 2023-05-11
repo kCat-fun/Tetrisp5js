@@ -1,0 +1,10 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+#canvas {
+    width: 800px;
+    height: 800px;
+    margin: 50px auto;
+}
