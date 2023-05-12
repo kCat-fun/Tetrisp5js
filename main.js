@@ -35,22 +35,27 @@ class Tetris {
         new SMino()
     ];
 
-    field = new Field();
-    nextMinoArray;
+    field;
+    nextMinoArray = new Array(14);
 
-    constructor() {}
+    constructor() {
+        this.setNextMinoArray();
+        this.field = new Field();
+    }
 
     draw() {
         this.field.draw();
     }
 
     setNextMinoArray() {
-        this.nextMinoArray = new Array(7);
+        this.nextMinoArray = new Array(14);
         let index = 0;
-        for (let value of shuffle(range(0, 7))) {
-            this.nextMinoArray[index] = this.tetriminos[value];
-            index++;
-        };
+        for (let i = 0; i < 2; i++) {
+            for (let value of shuffle(range(0, 7))) {
+                this.nextMinoArray[index + i * 7] = this.tetriminos[value];
+                index++;
+            }
+        }
     }
 }
 
@@ -61,6 +66,10 @@ class Field {
     static BLOCK_W;
     static BLOCK_H;
     static MARGIN_LEFT = 200;
+    pos = createVector(this.COL / 2 - 2, -3);
+    block = new Blocks();
+    blockDropTime = 1000;
+    dropStartTime = 0;
 
     constructor() {
         Field.BLOCK_W = 400 / this.COL;
@@ -71,9 +80,19 @@ class Field {
                 this.field[i][j] = 0;
             }
         }
+        this.block = tetris.nextMinoArray[0];
+        this.dropStartTime = millis();
     }
 
     draw() {
+        this.drawField();
+        this.drawBlock();
+        if (this.blockDropTime < millis() - this.dropStartTime) {
+            this.pos.y++;
+        }
+    }
+
+    drawField() {
         for (let i = 0; i < this.VER; i++) {
             for (let j = 0; j < this.COL; j++) {
                 stroke(150);
@@ -82,15 +101,23 @@ class Field {
                 rect(Field.MARGIN_LEFT + j * Field.BLOCK_W, i * Field.BLOCK_H, Field.BLOCK_W, Field.BLOCK_H);
             }
         }
-        for (let i = 0; i < tetris.nextMinoArray.length; i++) {
-            tetris.nextMinoArray[i].drawBlock(3, i * 3 - 1, Field.BLOCK_W, Field.BLOCK_H);
-        }
     }
+
+    drawBlock() {
+        this.block.drawBlock(this.pos.x, this.pos.y, Field.BLOCK_W, Field.BLOCK_H);
+    }
+}
+
+function draw() {
+    background(0);
+    tetris.draw();
 }
 
 class Blocks {
     tetrimino;
     color;
+
+    constructor() {}
 
     drawBlock(x, y, w, h) {
         fill(this.color);
@@ -199,9 +226,4 @@ class SMino extends Blocks {
     constructor() {
         super();
     }
-}
-
-function draw() {
-    background(0);
-    tetris.draw();
 }
