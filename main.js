@@ -41,6 +41,7 @@ class Tetris {
     constructor() {
         this.setNextMinoArray();
         this.field = new Field();
+        this.nextMinoArray = this.field.setMino(this.nextMinoArray);
     }
 
     draw() {
@@ -49,8 +50,8 @@ class Tetris {
 
     setNextMinoArray() {
         this.nextMinoArray = new Array(14);
-        let index = 0;
         for (let i = 0; i < 2; i++) {
+            let index = 0;
             for (let value of shuffle(range(0, 7))) {
                 this.nextMinoArray[index + i * 7] = this.tetriminos[value];
                 index++;
@@ -80,16 +81,22 @@ class Field {
                 this.field[i][j] = 0;
             }
         }
-        this.block = tetris.nextMinoArray[0];
         this.dropStartTime = millis();
     }
 
     draw() {
         this.drawField();
-        this.drawBlock();
+        this.drawMino();
         if (this.blockDropTime < millis() - this.dropStartTime) {
             this.pos.y++;
+            this.dropStartTime = millis();
         }
+    }
+
+    setMino(minoArr) {
+        this.block = minoArr[0];
+        minoArr.shift()
+        return minoArr;
     }
 
     drawField() {
@@ -103,7 +110,7 @@ class Field {
         }
     }
 
-    drawBlock() {
+    drawMino() {
         this.block.drawBlock(this.pos.x, this.pos.y, Field.BLOCK_W, Field.BLOCK_H);
     }
 }
@@ -116,8 +123,6 @@ function draw() {
 class Blocks {
     tetrimino;
     color;
-
-    constructor() {}
 
     drawBlock(x, y, w, h) {
         fill(this.color);
