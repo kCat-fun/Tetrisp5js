@@ -222,6 +222,7 @@ class Field {
                     this.holdMino = tetris.createMino(this.block.id);
                     this.block = temp;
                 }
+
                 this.pos.x = this.COL / 2 - 2;
                 this.pos.y = -3;
                 this.dropStartTime = millis();
