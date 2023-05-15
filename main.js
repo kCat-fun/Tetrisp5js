@@ -45,13 +45,34 @@ class Tetris {
         this.nextMinoArray = this.setMino(this.nextMinoArray);
     }
 
+    createMino(id) {
+        switch (id) {
+            case 1:
+                return new IMino();
+            case 2:
+                return new JMino();
+            case 3:
+                return new LMino();
+            case 4:
+                return new TMino();
+            case 5:
+                return new OMino();
+            case 6:
+                return new ZMino();
+            case 7:
+                return new SMino();
+        }
+    }
+
     draw() {
         this.field.draw();
+        this.drawNextMino();
+        this.drawHoldMino();
     }
 
     setNextMinoArray() {
         for (let value of shuffle(range(0, 7))) {
-            (this.nextMinoArray).push(this.tetriminos[value]);
+            (this.nextMinoArray).push(this.createMino(value + 1));
         }
     }
 
@@ -59,6 +80,30 @@ class Tetris {
         this.field.block = minoArr[0];
         minoArr.shift()
         return minoArr;
+    }
+
+    drawNextMino() {
+        fill(255);
+        textAlign(CENTER);
+        textSize(30);
+        text("NEXT", Field.MARGIN_LEFT + 10 * Field.BLOCK_W + 100, 50);
+        noFill();
+        stroke(150, 255);
+        for (let i = 0; i < 4; i++) {
+            rect(Field.MARGIN_LEFT + 10 * Field.BLOCK_W + 30, 70 + i * 160, 140, 140);
+            this.nextMinoArray[i].drawBlockAbsolute(Field.MARGIN_LEFT + 10 * Field.BLOCK_W + 40, 70 + i * 160, 30, 30);
+        }
+    }
+
+    drawHoldMino() {
+        fill(255);
+        textAlign(CENTER);
+        textSize(30);
+        text("HOLD", 100, 50);
+        noFill();
+        rect(30, 70, 140, 140);
+        if (this.field.holdMino)
+            this.field.holdMino.drawBlockAbsolute(40, 70, 30, 30);
     }
 }
 
@@ -75,6 +120,8 @@ class Field {
     dropStartTime = 0;
     clearFlag = 0;
     clearVer = 0;
+    holdMino;
+    holdFlag = false;
 
     constructor() {
         Field.BLOCK_W = 400 / this.COL;
@@ -113,6 +160,11 @@ class Field {
     }
 
     drawMino() {
+        let bottom = this.pos.y;
+        while (this.isMove(this.pos.x, bottom, 0, 1)) {
+            bottom++;
+        }
+        this.block.drawBlockGhost(this.pos.x, bottom, Field.BLOCK_W, Field.BLOCK_H);
         this.block.drawBlock(this.pos.x, this.pos.y, Field.BLOCK_W, Field.BLOCK_H);
     }
 
@@ -159,6 +211,21 @@ class Field {
                     this.pos.y++;
                 this.fixMino(this.pos.x, this.pos.y);
                 break;
+            case 67: // C
+                if (this.holdFlag) break;
+                this.holdFlag = true;
+                if (!this.holdMino) {
+                    this.holdMino = tetris.createMino(this.block.id);
+                    this.block = tetris.nextMinoArray.shift();
+                } else {
+                    let temp = tetris.createMino(this.holdMino.id);
+                    this.holdMino = tetris.createMino(this.block.id);
+                    this.block = temp;
+                }
+                this.pos.x = this.COL / 2 - 2;
+                this.pos.y = -3;
+                this.dropStartTime = millis();
+                break;
         }
     }
 
@@ -167,11 +234,12 @@ class Field {
             for (let j = 0; j < this.block.tetrimino[i].length; j++) {
                 if (y + i + dy < 0 || !this.block.tetrimino[i][j]) continue;
                 if (
-                    (this.pos.y + i + dy >= this.VER) ||
-                    (this.pos.x + j + dx < 0) ||
-                    (this.pos.x + j + dx >= this.COL)
-                )
+                    (y + i + dy >= this.VER) ||
+                    (x + j + dx < 0) ||
+                    (x + j + dx >= this.COL)
+                ) {
                     return false;
+                }
                 if (this.map[y + i + dy][x + j + dx]) {
                     return false;
                 }
@@ -195,6 +263,7 @@ class Field {
         this.dropStartTime = millis();
         this.drawField();
         this.isClearLine();
+        this.holdFlag = false;
     }
 
     isClearLine() {
@@ -211,6 +280,7 @@ class Field {
 
     clearLine() {
         this.clearFlag = 0;
+        console.log("clear");
         sleep(300);
         for (let i = 0; i < this.VER; i++) {
             for (let j = 0; j < this.COL; j++) {
@@ -250,6 +320,7 @@ class Blocks {
 
     drawBlock(x, y, w, h) {
         fill(this.color);
+        stroke(150, 255)
         for (let i = 0; i < 4; i++) {
             for (let j = 0; j < 4; j++) {
                 if (this.tetrimino[i][j]) {
@@ -257,6 +328,31 @@ class Blocks {
                 }
             }
         }
+    }
+
+    drawBlockAbsolute(x, y, w, h) {
+        fill(this.color);
+        for (let i = 0; i < 4; i++) {
+            for (let j = 0; j < 4; j++) {
+                if (this.tetrimino[i][j]) {
+                    rect(x + j * w, y + i * h, w, h);
+                }
+            }
+        }
+        noFill();
+    }
+
+    drawBlockGhost(x, y, w, h) {
+        fill(200, 100);
+        noStroke();
+        for (let i = 0; i < 4; i++) {
+            for (let j = 0; j < 4; j++) {
+                if (this.tetrimino[i][j]) {
+                    rect(Field.MARGIN_LEFT + (x + j) * w, (y + i) * h, w, h);
+                }
+            }
+        }
+        noFill();
     }
 
     rotateMino() {
