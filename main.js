@@ -37,6 +37,8 @@ class Tetris {
 
     field;
     nextMinoArray = [];
+    score = 0;
+    gameOverFlag = false;
 
     constructor() {
         this.setNextMinoArray();
@@ -68,6 +70,14 @@ class Tetris {
         this.field.draw();
         this.drawNextMino();
         this.drawHoldMino();
+        this.drawScore();
+        if (tetris.gameOverFlag) {
+            fill(255, 50, 50);
+            textAlign(CENTER);
+            textSize(80);
+            stroke(255);
+            text("Game Over", width / 2, height / 2);
+        }
     }
 
     setNextMinoArray() {
@@ -105,6 +115,15 @@ class Tetris {
         if (this.field.holdMino)
             this.field.holdMino.drawBlockAbsolute(40, 70, 30, 30);
     }
+
+    drawScore() {
+        fill(255);
+        textAlign(CENTER);
+        textSize(30);
+        text("SCORE", 100, 280);
+        textAlign(LEFT);
+        text(this.score, 50, 320);
+    }
 }
 
 class Field {
@@ -138,6 +157,7 @@ class Field {
     draw() {
         this.drawField();
         this.drawMino();
+        if (tetris.gameOverFlag) return;
         if (this.clearFlag != 0) {
             if (this.clearFlag < 5) this.clearFlag++;
             else this.clearLine();
@@ -170,9 +190,10 @@ class Field {
 
     dropMino() {
         if (this.blockDropTime < millis() - this.dropStartTime) {
-            if (this.isMove(this.pos.x, this.pos.y, 0, 1))
+            if (this.isMove(this.pos.x, this.pos.y, 0, 1)) {
                 this.pos.y++;
-            else
+                tetris.score += 5;
+            } else
                 this.fixMino(this.pos.x, this.pos.y);
             this.dropStartTime = millis();
         }
@@ -207,8 +228,10 @@ class Field {
                     this.block.rotateMino();
                 break;
             case 32: // space
-                while (this.isMove(this.pos.x, this.pos.y, 0, 1))
+                while (this.isMove(this.pos.x, this.pos.y, 0, 1)) {
                     this.pos.y++;
+                    tetris.score += 5;
+                }
                 this.fixMino(this.pos.x, this.pos.y);
                 break;
             case 67: // C
@@ -252,8 +275,13 @@ class Field {
     fixMino(x, y) {
         for (let i = 0; i < this.block.tetrimino.length; i++) {
             for (let j = 0; j < this.block.tetrimino[i].length; j++) {
-                if (this.block.tetrimino[i][j])
+                if (this.block.tetrimino[i][j]) {
+                    if (i + y < 0) {
+                        tetris.gameOverFlag = true;
+                        return;
+                    }
                     this.map[y + i][x + j] = this.block.id;
+                }
             }
         }
         tetris.setMino(tetris.nextMinoArray);
@@ -283,6 +311,7 @@ class Field {
         this.clearFlag = 0;
         console.log("clear");
         sleep(300);
+        let counter = 1;
         for (let i = 0; i < this.VER; i++) {
             for (let j = 0; j < this.COL; j++) {
                 if (!this.map[i][j]) break;
@@ -293,6 +322,8 @@ class Field {
                     for (let k = 0; k < this.COL; k++) {
                         this.map[0][k] = 0;
                     }
+                    tetris.score += 500 * counter;
+                    counter++;
                 }
             }
         }
